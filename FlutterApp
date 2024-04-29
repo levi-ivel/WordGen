@@ -1,0 +1,300 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Word Randomizer',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.black,
+        brightness: Brightness.dark,
+        textTheme: TextTheme(
+          bodyLarge: TextStyle(color: Colors.grey[300]),
+          bodyMedium: TextStyle(color: Colors.grey[300]),
+        ),
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => HomePage(),
+      },
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<String> wordsList = [];
+  List<String> sightsList = [];
+  List<String> consequencesList = [];
+
+  void _addNewWord(String input, List<String> list) {
+    setState(() {
+      list.add(input);
+    });
+  }
+
+  void _removeWord(int index, List<String> list) {
+    setState(() {
+      list.removeAt(index);
+    });
+  }
+
+  void _showEditDialog(String word, List<String> list, int index) {
+    TextEditingController _controller = TextEditingController(text: word);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[850],
+          title: Text('Edit Word/Phrase', style: TextStyle(color: Colors.grey[300])),
+          content: TextField(
+            controller: _controller,
+            style: TextStyle(color: Colors.grey[300]),
+            decoration: InputDecoration(
+              labelText: 'Enter word/phrase',
+              labelStyle: TextStyle(color: Colors.grey[300]),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue),
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel', style: TextStyle(color: Colors.grey[300])),
+            ),
+            TextButton(
+              onPressed: () {
+                _editWord(_controller.text, list, index);
+                Navigator.of(context).pop();
+              },
+              child: Text('Save', style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editWord(String newText, List<String> list, int index) {
+    setState(() {
+      list[index] = newText;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Word Randomizer'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildInputField('Word', wordsList),
+            _buildInputField('Sight', sightsList),
+            _buildInputField('Consequence', consequencesList),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RerollPage(
+                wordsList: wordsList,
+                sightsList: sightsList,
+                consequencesList: consequencesList,
+              ),
+            ),
+          );
+        },
+        child: Icon(Icons.refresh),
+      ),
+    );
+  }
+
+  Widget _buildInputField(String label, List<String> list) {
+    return Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Input $label:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8.0),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  style: TextStyle(color: Colors.grey[300]),
+                  decoration: InputDecoration(
+                    hintText: 'Enter $label',
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                  ),
+                  onSubmitted: (value) {
+                    _addNewWord(value, list);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.add, color: Colors.blue),
+                onPressed: () {
+                  _addNewWord(list.last, list);
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: 8.0),
+          Text(
+            'List of $label:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8.0),
+          _buildWordList(list),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWordList(List<String> list) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(list[index], style: TextStyle(color: Colors.grey[300])),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.edit, color: Colors.grey[300]),
+                onPressed: () {
+                  _showEditDialog(list[index], list, index);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.delete, color: Colors.grey[300]),
+                onPressed: () {
+                  _removeWord(index, list);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class RerollPage extends StatelessWidget {
+  final List<String> wordsList;
+  final List<String> sightsList;
+  final List<String> consequencesList;
+
+  const RerollPage({
+    Key? key,
+    required this.wordsList,
+    required this.sightsList,
+    required this.consequencesList,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Reroll Words'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RerollBox(label: 'Word', wordList: wordsList),
+            RerollBox(label: 'Sight', wordList: sightsList),
+            RerollBox(label: 'Consequence', wordList: consequencesList),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RerollBox extends StatefulWidget {
+  final String label;
+  final List<String> wordList;
+
+  const RerollBox({
+    Key? key,
+    required this.label,
+    required this.wordList,
+  }) : super(key: key);
+
+  @override
+  _RerollBoxState createState() => _RerollBoxState();
+}
+
+class _RerollBoxState extends State<RerollBox> {
+  late String _currentWord;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentWord = _getRandomWord();
+  }
+
+  void _reroll() {
+    setState(() {
+      _currentWord = _getRandomWord();
+    });
+  }
+
+  String _getRandomWord() {
+    if (widget.wordList.isNotEmpty) {
+      final random = Random();
+      return widget.wordList[random.nextInt(widget.wordList.length)];
+    }
+    return 'No words available';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '$_currentWord',
+            style: TextStyle(fontSize: 20.0),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20.0),
+          ElevatedButton(
+            onPressed: _reroll,
+            child: Text('Reroll ${widget.label}'),
+          ),
+        ],
+      ),
+    );
+  }
+}
